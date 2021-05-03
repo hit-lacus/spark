@@ -17,7 +17,11 @@
 package org.apache.spark.examples.sql
 
 // $example on:programmatic_schema$
+
 import org.apache.spark.sql.Row
+
+
+import scala.collection.mutable
 // $example off:programmatic_schema$
 // $example on:init_session$
 import org.apache.spark.sql.SparkSession
@@ -38,16 +42,63 @@ object SparkSQLExample {
     // $example on:init_session$
     val spark = SparkSession
       .builder()
-      .appName("Spark SQL basic example")
+      .appName("EU4")
       .config("spark.some.config.option", "some-value")
       .getOrCreate()
 
     // $example off:init_session$
 
-    runBasicDataFrameExample(spark)
-    runDatasetCreationExample(spark)
-    runInferSchemaExample(spark)
-    runProgrammaticSchemaExample(spark)
+    spark.sparkContext.textFile(
+      "examples/src/main/resources/EU4/province-data/provinces-csv/")
+      .map(x => {
+        val r = x.split(",")
+        r(2)
+      }).filter(x => !x.equals("Owner"))
+      .distinct(3)
+      .collect()
+      .foreach(println)
+
+    Thread.sleep(60 * 60 * 1000)
+
+    // area, tax, province
+    val province_tax = spark.sparkContext.textFile(
+      "examples/src/main/resources/EU4/province-data/provinces-csv/")
+      .map(x => {
+        val r = x.split(",")
+        (r(0), (if (r(5) != "Tax") Integer.parseInt(r(5)) else 0, r(1)))
+      })
+
+    // area, region
+    val areas = spark.sparkContext.textFile(
+      "examples/src/main/resources/EU4/province-data/areas-csv/")
+      .map(x => {
+        val r = x.split(",")
+        (r(1), r(0))
+      })
+
+    province_tax.leftOuterJoin(areas)
+      .groupByKey()
+      .map((item) => {
+        val area = item._1
+        val regionMap = new mutable.HashMap[String, Int]()
+        val pMap = new mutable.HashMap[String, Int]()
+
+        for (i <- item._2) {
+          val region : String = i._2.getOrElse("EU")
+          val tax : Int = i._1._1
+          val province : String = i._1._2
+
+          regionMap += (
+            region ->
+              (tax + regionMap.get(region).getOrElse(0)))
+          pMap += (
+            province ->
+              (tax + pMap.get(province).getOrElse(0)))
+        }
+        (area, regionMap, pMap)
+      }).collect()
+      .foreach(println)
+
 
     spark.stop()
   }
@@ -173,7 +224,7 @@ object SparkSQLExample {
     primitiveDS.map(_ + 1).collect() // Returns: Array(2, 3, 4)
 
     // DataFrames can be converted to a Dataset by providing a class. Mapping will be done by name
-    val path = "examples/src/main/resources/people.json"
+    val path = "examples/src/main/resources/people-json.txt"
     val peopleDS = spark.read.json(path).as[Person]
     peopleDS.show()
     // +----+-------+
