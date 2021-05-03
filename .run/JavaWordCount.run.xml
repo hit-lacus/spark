@@ -1,0 +1,18 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="JavaWordCount" type="Application" factoryName="Application" nameIsGenerated="true">
+    <option name="INCLUDE_PROVIDED_SCOPE" value="true" />
+    <option name="MAIN_CLASS_NAME" value="org.apache.spark.examples.JavaWordCount" />
+    <module name="spark-examples_2.12" />
+    <option name="PROGRAM_PARAMETERS" value="$USER_HOME$/jmeter.log" />
+    <option name="VM_PARAMETERS" value="-Dspark.master=local" />
+    <extension name="coverage">
+      <pattern>
+        <option name="PATTERN" value="org.apache.spark.examples.*" />
+        <option name="ENABLED" value="true" />
+      </pattern>
+    </extension>
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>
